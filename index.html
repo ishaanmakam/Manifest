@@ -142,6 +142,7 @@
     <span class="brand">Manifest<small>applications and what you wrote</small></span>
     <span class="grow"></span>
     <span class="who" id="who"></span>
+    <button class="quiet" id="btn-import">Import</button><input type="file" id="file-import" accept="application/json" hidden>
     <button class="quiet" id="btn-export">Export</button>
     <button class="quiet" id="btn-signout">Sign out</button>
   </div>
@@ -383,6 +384,25 @@ $("#btn-add").onclick=()=>openDrawer("new","edit");
 $("#search").oninput=e=>{query=e.target.value.trim();render();};
 $("#sort").onchange=e=>{sort=e.target.value;render();};
 $("#btn-export").onclick=()=>{ if(!apps.length) return; const blob=new Blob([JSON.stringify({exported:new Date().toISOString(),apps},null,2)],{type:"application/json"}); const u=URL.createObjectURL(blob); const l=Object.assign(document.createElement("a"),{href:u,download:"manifest.json"}); l.click(); URL.revokeObjectURL(u); };
+
+$("#btn-import").onclick=()=>$("#file-import").click();
+$("#file-import").onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  let d; try{ d=JSON.parse(await f.text()); }catch{ toast("Not a valid JSON file"); return; }
+  const list=Array.isArray(d)?d:(d.apps||[]);
+  if(!list.length){ toast("No applications in that file"); return; }
+  if(!confirm(`Import ${list.length} application${list.length>1?"s":""}? Existing ones are kept.`)) return;
+  let n=0, base=apps.length?Math.min(...apps.map(x=>x.position||0)):0;
+  for(const a of list){
+    const row={ org:String(a.org||"").trim()||"Untitled", role:a.role||"", term:a.term||a.when||"", deadline:(a.deadline&&/^\d{4}-\d{2}-\d{2}$/.test(a.deadline))?a.deadline:null,
+      status:STATUSES[a.status]?a.status:"go", position:--base,
+      notes:Array.isArray(a.notes)?a.notes.map(x=>Array.isArray(x)?[String(x[0]),String(x[1]??"")]:["Note",String(x)]):[],
+      questions:Array.isArray(a.questions)?a.questions.map(q=>({prompt:q.prompt||"",tag:q.tag||"",note:q.note||"",answer:q.answer||""})):[] };
+    try{ const r=await store.insert(row); if(!DEMO) apps.push(r); n++; }catch(err){ toast(err.message); break; }
+  }
+  if(!DEMO){ try{ apps=await store.list(); }catch{} }
+  render(); toast(`Imported ${n}`);
+};
 
 boot();
 </script>
