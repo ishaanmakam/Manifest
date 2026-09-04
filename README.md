@@ -16,3 +16,7 @@ The anon key is meant to be public. Row-level security in `schema.sql` is what k
 ## Without Supabase
 
 If the two constants are left blank, the page runs in demo mode: data lives only in that browser tab and is lost on reload. Useful for trying the UI.
+
+## Paste from doc
+
+In the editor, "Paste from doc" takes a pasted block of prompts and answers and splits it into fields. A line is treated as a prompt if it ends in a question mark, starts with words like Tell us / Describe / Why / What / How, or is a short line followed by a long paragraph. Everything until the next prompt becomes that prompt's answer. Review before saving.
