@@ -347,14 +347,27 @@ function bindEditor(a){
 // ================= PASTE / SPLIT =================
 function splitPlain(text){
   const paras=text.replace(/\r/g,"").split(/\n\s*\n|\n(?=\S)/).map(p=>p.trim()).filter(Boolean);
+  const wc=p=>p.split(/\s+/).length;
+  // strong: unmistakable form markers
+  const strong=p=>wc(p)<=70 && (/\(\s*\d+\s*words?[^)]*\)\s*\*?\s*$/i.test(p) || /\*\s*$/.test(p) || /^(q\s*)?\d+\s*[).:]\s+\S/i.test(p) || /^(prompt|question)\s*[\d.:]/i.test(p));
+  // medium: reads like a question or an instruction
+  const verb=p=>/^(tell us|tell me|describe|explain|reflecting|reflect on|why|what|how|when|where|which|who|please|share|discuss|walk us|give us|give an example|list|in what|provide|write|you have been|if you)\b/i.test(p);
+  const question=p=>/\?\s*(\(.*\))?\s*\*?\s*$/.test(p);
+  const medium=p=>wc(p)<=70 && (question(p)||verb(p));
+  const template = !paras.some(p=>wc(p)>=25);                                // no real answers anywhere: every prompt-like line is a prompt
   const out=[]; let cur=null;
-  const isPrompt=(p,next)=>{ const w=p.split(/\s+/).length; if(/^(prompt|question|q)\s*[\d.:]/i.test(p)) return true;
-    if(w<60 && /\?\s*(\(.*\))?\s*(\*|\d+\s*words?.*)?$/.test(p)) return true;
-    if(w<60 && /^(tell us|tell me|describe|explain|why|what|how|when|where|which|who|please|share|discuss|walk us|give an example|list|in what|provide|write)\b/i.test(p)) return true;
-    return w<=18 && next && next.split(/\s+/).length>=25; };
-  for(let i=0;i<paras.length;i++){ const p=paras[i], next=paras[i+1];
-    if(isPrompt(p,next)){ cur={prompt:p.replace(/^(prompt|question|q)\s*[\d.:]+\s*/i,""),answer:""}; out.push(cur); }
-    else if(cur){ cur.answer += (cur.answer?"\n\n":"") + p; } else { cur={prompt:"Untitled",answer:p}; out.push(cur); } }
+  for(let i=0;i<paras.length;i++){
+    const p=paras[i], next=paras[i+1], w=wc(p);
+    const answerEmpty = !!cur && !cur.answer && !template;
+    let isPrompt=false;
+    if(strong(p)) isPrompt=true;
+    else if(answerEmpty) isPrompt = false;                                   // first paragraph after a prompt is its answer, even if it looks like a question
+    else if(medium(p)) isPrompt=true;
+    else if(w<=18 && next && wc(next)>=25) isPrompt=true;                  // short heading before a long paragraph
+    if(isPrompt){ cur={prompt:p.replace(/^(prompt|question)\s*[\d.:]+\s*/i,""),answer:""}; out.push(cur); }
+    else if(cur){ cur.answer += (cur.answer?"\n\n":"") + p; }
+    else { cur={prompt:"Untitled",answer:p}; out.push(cur); }
+  }
   return out.filter(q=>q.prompt||q.answer);
 }
 function openPaste(onDone){
