@@ -30,3 +30,5 @@ begin new.updated_at = now(); return new; end $$;
 drop trigger if exists applications_touch on public.applications;
 create trigger applications_touch before update on public.applications
   for each row execute function public.touch_updated_at();
+grant select, insert, update, delete on public.applications to authenticated;
+grant select, insert, update, delete on public.applications to service_role;
