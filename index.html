@@ -401,7 +401,9 @@ $("#file-import").onchange=async e=>{
   if(!DEMO){ try{ apps=await store.list(); }catch{} }
   render(); toast(`Imported ${n}`);
 };
-
+["email","pw"].forEach(id => document.getElementById(id).addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("btn-signin").click(); }
+}));
 
 boot();
 </script>
