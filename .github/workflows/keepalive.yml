@@ -1,0 +1,13 @@
+name: Keep Supabase awake
+on:
+  schedule:
+    - cron: "0 14 * * 1,4"   # Mondays and Thursdays, 14:00 UTC
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sf "https://xtqwcpogbzmxxdiwapeg.supabase.co/rest/v1/applications?select=id&limit=1" \
+            -H "apikey: sb_publishable_QStH59XnYoAjJOOXevuoTQ_0nUDAoud" \
+            -H "Authorization: Bearer sb_publishable_QStH59XnYoAjJOOXevuoTQ_0nUDAoud"
